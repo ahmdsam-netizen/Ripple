@@ -1,8 +1,9 @@
 import { Server } from "socket.io"
-import next from "next"
+import next, { NextApiRequest } from "next"
 import { createServer } from "http";
 import { parse } from "url";
-import jwt from "jsonwebtoken"
+import { getToken } from "next-auth/jwt";
+import prisma from "./lib/prisma";
 
 const port = 3000 ;
 const dev = process.env.NODE_ENV !== 'production'
@@ -23,15 +24,27 @@ app.prepare().then(() => {
     io.on('connection' , (socket : any) => {
         socket.authenticated = false 
 
-        socket.on('authenticate' , ({token} : {token : string}) => {
+        socket.on('authenticate' , async () => {
             try {
-                const payload = jwt.verify(token , JWT_SECRET) as jwt.JwtPayload
+
+                const req = socket.request as unknown as NextApiRequest
+                
+                const token = await getToken({
+                    req , 
+                    secret : process.env.NEXTAUTH_SECRET!
+                })
+
+                if (!token || !token.id) {
+                    socket.emit('auth_error', { message: 'Not authenticated' })
+                    socket.disconnect(true)
+                    return
+                }
 
                 socket.authenticated = true ;
-                socket.userId = payload.sub ;
-                socket.userRole = payload.role ;
+                socket.userId = token.id ;
+                socket.username = token.username ;
 
-                socket.emit('authenticated' , {userId : payload.sub})
+                socket.emit('authenticated' , {id : socket.userId})
 
             } catch {
                 socket.emit('auth_error' , { message : 'Invalid or expired token'})
@@ -48,8 +61,82 @@ app.prepare().then(() => {
             }
         })
 
-        socket.on('message' , (data : {text : string}) => {
-            io.emit('message' , {from : socket.userId , text : data.text})
+        socket.on('create_room' , async (data : {roomname : string , description : string , owner : string}) => {
+            const existingRoom = await prisma.room.findFirst({
+                where : {roomname : data.roomname}
+            })            
+
+            if(existingRoom) return null 
+
+            const room = await prisma.room.create({
+                data : {
+                    roomname : data.roomname , 
+                    description : data.description ,
+                    created_by : socket.username ,
+                    author : {
+                        connect : {id : socket.userId}
+                    }
+                }
+            })
+            socket.join(room.roomname)
+        })
+
+        socket.on('join_room' , async (data : {roomname : string}) => {
+            const existingRoom = await prisma.room.findFirst({
+                where : {roomname : data.roomname}
+            })            
+
+            if(!existingRoom) return null 
+
+            await prisma.room.update({
+                where : {roomname : data.roomname} ,
+                data : {
+                    author : {
+                        connect : {id : socket.userId}
+                    }
+                }
+            })
+
+            socket.join(existingRoom.roomname)
+        })
+
+        socket.on('leave_room' , async (data : {roomname : string}) => {
+            const existingRoom = await prisma.room.findFirst({
+                where : {roomname : data.roomname}
+            })            
+
+            if(!existingRoom) return null 
+
+            await prisma.room.update({
+                where : {roomname : data.roomname} ,
+                data : {
+                    author : {
+                        disconnect : {id : socket.userId}
+                    }
+                }
+            })
+
+            socket.leave(existingRoom.roomname)
+
+        })
+
+        socket.on('message' , async (data : {text : string , roomId : string}) => {
+            const room = await prisma.room.findFirst({
+                where : {
+                    id : data.roomId
+                }
+            })
+
+            if(!room) return null 
+
+            const message = await prisma.message.create({
+                data : {
+                    content : data.text ,
+                    room_id : data.roomId ,
+                    user_id : socket.userId
+                }
+            })
+            io.to(room.roomname).emit('message' , {from : socket.username , text : message.content , to : data.roomId})
         })
     })
     httpServer.listen(port , () => {

@@ -4,21 +4,24 @@ let socket : Socket | null = null ;
 
 export function getSocket(): Socket{
     if(!socket){
-        socket = io({autoConnect : false})
+        socket = io({
+            autoConnect : false , 
+            withCredentials : true ,
+        })
     }
     return socket
 }
 
-export async function connectWithAuth(getToken: () => string): Promise<Socket> {
+export async function connectWithAuth(): Promise<Socket> {
     const socket = getSocket() ;
     
     return new Promise((resolve , reject) => {
         socket.connect() ;
 
         socket.on('connect' , () => {
-            socket.emit('authenticated' , {token : getToken() })
+            socket.emit('authenticate')
         })
-        socket.on('authenticate' , () => resolve(socket)) 
+        socket.on('authenticated' , () => resolve(socket)) 
         socket.on('auth_error' , (err) => reject(new Error(err.message)))
 
     })
