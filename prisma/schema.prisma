@@ -14,7 +14,10 @@ model User {
   username  String @unique
   created_at DateTime @default(now())
   rooms Room[]
-  messages Message[]
+  messages RoomMessage[]
+
+  sMessage DirectMessage[] @relation("dm_sent")
+  rMessage DirectMessage[] @relation("dm_received")
 } 
 
 model Room {
@@ -23,15 +26,26 @@ model Room {
   description String?
   created_by String
   created_at DateTime @default(now())
-  messages Message[]
+  messages RoomMessage[]
   author User[]
 }
 
-model Message { 
+model RoomMessage { 
   id    String     @id @default(cuid()) 
   content   String
+  sent_at DateTime @default(now())
   room_id     String
   room Room @relation(fields: [room_id] , references: [id])
   user_id  String
   user    User    @relation(fields: [user_id], references: [id]) 
+} 
+
+model DirectMessage { 
+  id    String     @id @default(cuid()) 
+  content   String
+  sent_at DateTime @default(now())
+  sender_id  String
+  sender    User    @relation("dm_sent" , fields: [sender_id], references: [id]) 
+  receiver_id String
+  receiver User @relation("dm_received" , fields: [receiver_id] , references: [id])
 } 
