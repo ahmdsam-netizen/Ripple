@@ -35,6 +35,12 @@ export function initSocket(io : Server){
                 socket.authenticated = true ;
                 socket.userId = token.id ;
                 socket.username = token.username ;
+                socket.join(socket.userId) 
+
+
+                await syncUserRoom(socket)
+
+                handlers.forEach(handler => handler(io , socket))
 
                 socket.emit('authenticated' , {id : socket.userId})
 
@@ -53,9 +59,6 @@ export function initSocket(io : Server){
             }
         })
 
-        await syncUserRoom(socket)
-
-        handlers.forEach(handler => handler(io , socket))
 
         socket.on('disconnect' , () => {
             console.log(`${socket.username} disconnected`)
