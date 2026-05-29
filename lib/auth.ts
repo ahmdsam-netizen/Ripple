@@ -20,7 +20,7 @@ export const authOptions : NextAuthOptions = {
                 try {
                     const user = await prisma.user.findFirst({
                         where : {
-                            name : credentials.username ,
+                            username : credentials.username ,
                             password : credentials.password
                         }
                     })
@@ -36,8 +36,8 @@ export const authOptions : NextAuthOptions = {
         })
     ] ,
     pages : {
-        signIn : "/signIn" ,
-        newUser : "/signUp" ,
+        signIn : "/signin" ,
+        newUser : "/signup" ,
     },
 
     callbacks : {

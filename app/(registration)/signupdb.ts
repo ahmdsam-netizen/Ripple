@@ -9,9 +9,9 @@ export async function signUp(username : string , password : string , email : str
     try {
         const user = await prisma.user.create({
             data : {
-                name : username ,
+                email : email ,
+                username : username ,
                 password : password ,
-                email : email
             }
         })
         return user;

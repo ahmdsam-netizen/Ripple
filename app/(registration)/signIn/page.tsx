@@ -1,10 +1,10 @@
 "use client"
-import { getSession, signIn, useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react"
 
 export default function SignInPage(){
-    const [userName , setUserName] = useState("") ;
+    const [username , setUserName] = useState("") ;
     const [password , setPassword] = useState("") ;
     const [error , setError] = useState("")
     const router = useRouter() 
@@ -26,7 +26,7 @@ export default function SignInPage(){
             sessionStorage.clear();
 
             const result = await signIn("credentials" , {
-                username: userName,
+                username: username,
                 password: password,
                 redirect : false
             })
@@ -35,7 +35,7 @@ export default function SignInPage(){
                 // Force a hard refresh to clear all caches
                 window.location.href = "/";
             } else {
-                setError(result?.error || "Invalid userName or password")
+                setError("Invalid userName or password")
             }
         } 
         catch (error) {
@@ -47,7 +47,7 @@ export default function SignInPage(){
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950">
             <div className="p-8 bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm flex flex-col gap-6">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-indigo-400 mb-2">Connect Me</h1>
+                    <h1 className="text-3xl font-bold text-indigo-400 mb-2">Ripple</h1>
                     <p className="text-slate-400 text-sm">Welcome back</p>
                 </div>
 
@@ -61,7 +61,7 @@ export default function SignInPage(){
                     type="text"
                     placeholder="Username"
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                    value={userName}
+                    value={username}
                     onChange={e => setUserName(e.target.value)}
                 />
                 <input

@@ -6,10 +6,10 @@ export default withAuth(
     // } ,
     {
     pages : {
-        signIn : "/signIn"
+        signIn : "/signin"
     }
 })
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|signIn|signUp).*)"]
+    matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|signin|signup).*)"]
 }

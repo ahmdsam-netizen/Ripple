@@ -1,13 +1,13 @@
 "use client"
 import { useState } from "react";
-import { signUp } from "../signUp"
+import { signUp } from "../signupdb"
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
  
 export default function SignUpPage(){
     const [username , setUserName] = useState("") ;
     const [password , setPassword] = useState("") ;
-    const [name , setName] = useState("") ;
+    const [email , setEmail] = useState("") ;
     const [error , setError] = useState("")
     const router = useRouter()
 
@@ -17,8 +17,8 @@ export default function SignUpPage(){
             console.log("Starting signup for:", username);
             
             // Create the user
-            const newUser = await signUp( username , password , name )
-            console.log("User created:", newUser?.name);
+            const newUser = await signUp( username , password , email )
+            console.log("User created:", newUser?.username);
             
             // Sign in the newly created user
             const result = await signIn("credentials", { username: username, password, redirect: false })
@@ -45,7 +45,7 @@ export default function SignUpPage(){
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950">
             <div className="p-8 bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm flex flex-col gap-6">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-indigo-400 mb-2">Connect Me</h1>
+                    <h1 className="text-3xl font-bold text-indigo-400 mb-2">Ripple</h1>
                     <p className="text-slate-400 text-sm">Create your account</p>
                 </div>
 
@@ -71,10 +71,10 @@ export default function SignUpPage(){
                 />
                 <input
                     type="text"
-                    placeholder="Full Name"
+                    placeholder="Email Address"
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                 />
                 <button
                     onClick={signUpButton}
@@ -85,7 +85,7 @@ export default function SignUpPage(){
 
                 <p className="text-sm text-center text-slate-400">
                     Already have an account?{" "}
-                    <a href="/api/auth/signin" className="text-indigo-400 hover:text-indigo-300 underline font-semibold transition-colors">
+                    <a href="/signin" className="text-indigo-400 hover:text-indigo-300 underline font-semibold transition-colors">
                         Sign in
                     </a>
                 </p>
