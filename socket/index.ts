@@ -3,8 +3,10 @@ import userHandler from "./handlers/userHandler";
 import messageHandler from "./handlers/messageHandler";
 import { NextApiRequest } from "next";
 import { getToken } from "next-auth/jwt";
-import { Server } from "socket.io"
+import { Server, Socket } from "socket.io"
 import { syncUserRoom } from "@/lib/reconnect";
+import { setUpRedisListener } from "@/chatHandler";
+import { connectRedis } from "@/redisClient";
 
 const handlers = [
     roomHandler ,
@@ -13,8 +15,8 @@ const handlers = [
 ]
 
 export function initSocket(io : Server){
-    io.on('connection' , async (socket : any) => {
-        socket.authenticated = false ;
+    io.on('connection' , async (socket : Socket) => {
+        socket.data.authenticated = false ;
 
         socket.on('authenticate' , async () => {
             try {
@@ -32,17 +34,19 @@ export function initSocket(io : Server){
                     return
                 }
 
-                socket.authenticated = true ;
-                socket.userId = token.id ;
-                socket.username = token.username ;
-                socket.join(socket.userId) 
+                socket.data.authenticated = true ;
+                socket.data.userId = token.id ;
+                socket.data.username = token.username ;
+                socket.join(socket.data.userId) 
 
 
                 await syncUserRoom(socket)
-
                 handlers.forEach(handler => handler(io , socket))
 
-                socket.emit('authenticated' , {id : socket.userId})
+                await connectRedis()
+                setUpRedisListener(io)
+
+                socket.emit('authenticated' , {id : socket.data.userId})
 
             } catch {
                 socket.emit('auth_error' , { message : 'Invalid or expired token'})
@@ -53,7 +57,7 @@ export function initSocket(io : Server){
         socket.onAny((event : any) => {
             if( event === 'authenticate' ) return 
 
-            if(!socket.authenticated){
+            if(!socket.data.authenticated){
                 socket.emit('auth_error' , {message : 'Not authenticated'})
                 socket.disconnect(true)
             }
@@ -61,7 +65,7 @@ export function initSocket(io : Server){
 
 
         socket.on('disconnect' , () => {
-            console.log(`${socket.username} disconnected`)
+            console.log(`${socket.data.username} disconnected`)
         })
     })
 }

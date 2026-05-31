@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 
-export default function userHandler(io : Server , socket : any){
+export default function userHandler(io : Server , socket : Socket){
     try {
         socket.on('find_user' , async (data : {filter : string}) => {
             const getUsers = await prisma.user.findMany({

@@ -1,31 +1,11 @@
-import { Server } from "socket.io"
+import { Server, Socket } from "socket.io"
 import prisma from "@/lib/prisma"
+import { createRoom, joinRoom, leaveRoom } from "@/chatHandler"
 
-export default function (io : Server , socket : any){
+export default function (io : Server , socket : Socket){
     socket.on('create_room' , async (data : {roomname : string , description : string , owner : string}) => {
         try {
-            const existingRoom = await prisma.room.findFirst({
-                where : {roomname : data.roomname}
-            })            
-
-            if(existingRoom) {
-                socket.emit('error' , { message : "Room already exists"})
-                return 
-            }
-
-            const room = await prisma.room.create({
-                data : {
-                    roomname : data.roomname , 
-                    description : data.description ,
-                    created_by : socket.username ,
-                    author : {
-                        connect : {id : socket.userId}
-                    }
-                }
-            })
-
-            socket.join(room.id)
-            socket.emit('room_created' , {roomname : room.roomname})
+            await createRoom(socket , data) 
         } catch (error : any) {
             console.log(error.message)
             socket.emit('error' , {message : "Failed to create room"})
@@ -35,34 +15,7 @@ export default function (io : Server , socket : any){
 
     socket.on('join_room' , async (data : {roomname : string}) => {
         try {
-            const existingRoom = await prisma.room.findFirst({
-                where : {roomname : data.roomname} ,
-                include : {
-                    author : {where : {id : socket.userId}}
-                }
-            })            
-
-            if(!existingRoom) {
-                socket.emit('error' , {message : "Room doesn't exists"})
-                return
-            }
-
-            if(existingRoom.author.length > 0) {
-                socket.emit('error' , {message : "Aready a member"})
-                return
-            }
-
-            await prisma.room.update({
-                where : {roomname : data.roomname} ,
-                data : {
-                    author : {
-                        connect : { id : socket.userId }
-                    }
-                }
-            })
-            socket.join(existingRoom.id)
-            socket.emit('joined_room' , {roomname : existingRoom.roomname})
-            socket.to(existingRoom.id).emit('user_joined' , { username : socket.username})
+            await joinRoom(socket , data)
         } catch (error : any) {
             console.log(error.message)
             socket.emit('error' , {message : "Failed to join room"})
@@ -73,35 +26,7 @@ export default function (io : Server , socket : any){
 
     socket.on('leave_room' , async (data : {roomname : string}) => {
         try {
-            const existingRoom = await prisma.room.findFirst({
-                where : {roomname : data.roomname} ,
-                include : {
-                    author : {where : {id : socket.userId}}
-                }
-            })            
-
-            if(!existingRoom){
-                socket.emit('error' , {message : "Room doesn't exists"})
-                return     
-            }
-
-            if(existingRoom.author.length === 0){
-                socket.emit('error' , {message : "Not a member of this group"})
-                return
-            }
-
-            await prisma.room.update({
-                where : {roomname : data.roomname} ,
-                data : {
-                    author : {
-                        disconnect : { id : socket.userId }
-                    }
-                }
-            })
-
-            socket.leave(existingRoom.id)
-            socket.emit('lefted_room' , {roomname : existingRoom.roomname})
-            socket.to(existingRoom.id).emit('user_left' , {username : socket.username})
+            await leaveRoom(socket , data) 
         } catch (error : any) {
             console.log(error.message)
             socket.emit('error' , {message : "Failed to join room"})
