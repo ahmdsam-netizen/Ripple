@@ -11,7 +11,7 @@ export default function userHandler(io : Server , socket : Socket){
                 take : 20
             })
 
-            socket.emit('filter_room' , getUsers.map(user => ({
+            socket.emit('filter_users' , getUsers.map(user => ({
                 username : user.username , 
                 created_at : user.created_at ,
             })))

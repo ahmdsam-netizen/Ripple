@@ -36,6 +36,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      pub-sub:
+        condition: service_started
 
   db: 
     image: postgres:alpine
@@ -55,6 +57,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  pub-sub:
+    image: redis:latest
+    container_name: ripple-pub-sub
+    restart:  always
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres-data:

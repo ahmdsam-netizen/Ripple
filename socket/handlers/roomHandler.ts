@@ -1,9 +1,9 @@
 import { Server, Socket } from "socket.io"
 import prisma from "@/lib/prisma"
-import { createRoom, joinRoom, leaveRoom } from "@/chatHandler"
+import { createRoom , joinRoom , leaveRoom } from "./pubsubEvents/pubsubFunctions"
 
 export default function (io : Server , socket : Socket){
-    socket.on('create_room' , async (data : {roomname : string , description : string , owner : string}) => {
+    socket.on('create_room' , async (data : {roomname : string , description : string }) => {
         try {
             await createRoom(socket , data) 
         } catch (error : any) {
@@ -29,7 +29,7 @@ export default function (io : Server , socket : Socket){
             await leaveRoom(socket , data) 
         } catch (error : any) {
             console.log(error.message)
-            socket.emit('error' , {message : "Failed to join room"})
+            socket.emit('error' , {message : "Failed to leave room"})
         }
         
     })

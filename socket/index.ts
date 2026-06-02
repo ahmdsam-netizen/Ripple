@@ -5,8 +5,6 @@ import { NextApiRequest } from "next";
 import { getToken } from "next-auth/jwt";
 import { Server, Socket } from "socket.io"
 import { syncUserRoom } from "@/lib/reconnect";
-import { setUpRedisListener } from "@/chatHandler";
-import { connectRedis } from "@/redisClient";
 
 const handlers = [
     roomHandler ,
@@ -42,9 +40,6 @@ export function initSocket(io : Server){
 
                 await syncUserRoom(socket)
                 handlers.forEach(handler => handler(io , socket))
-
-                await connectRedis()
-                setUpRedisListener(io)
 
                 socket.emit('authenticated' , {id : socket.data.userId})
 

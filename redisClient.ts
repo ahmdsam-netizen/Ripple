@@ -1,7 +1,7 @@
 import {createClient} from "redis"
 
-export const publisher = createClient({url : 'redis://localhost:6379'})
-export const subscriber = createClient({url : 'redis://localhost:6379'})
+export const publisher = createClient({url : process.env.REDIS_URL ?? 'redis://pub-sub:6379'})
+export const subscriber = createClient({url : process.env.REDIS_URL ?? 'redis://pub-sub:6379'})
 
 export async function connectRedis(){
     try {
@@ -11,6 +11,7 @@ export async function connectRedis(){
     } 
     catch (error : any) {
         console.log(error.message)
+        process.exit(1) 
     }
 }
 

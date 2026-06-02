@@ -1,7 +1,6 @@
 import { Server, Socket } from "socket.io"
 import prisma from "@/lib/prisma"
-import { sendDirectMessage, sendRoomMessage, typingInRoom, typingToUser } from "@/chatHandler"
-
+import { typingInRoom , sendDirectMessage , sendRoomMessage , typingToUser } from "./pubsubEvents/pubsubFunctions"
 
 export default function messageHandler(io : Server , socket : Socket){
     socket.on('message_in_room' , async (data : {text : string , roomname : string}) => {
