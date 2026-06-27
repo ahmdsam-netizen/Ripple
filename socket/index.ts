@@ -5,6 +5,8 @@ import { NextApiRequest } from "next";
 import { getToken } from "next-auth/jwt";
 import { Server, Socket } from "socket.io"
 import { syncUserRoom } from "@/lib/reconnect";
+import { subscribeToChannel } from "@/chatHandler";
+import { parseCookieHeader } from "@/lib/parseCookies";
 
 const handlers = [
     roomHandler ,
@@ -12,44 +14,70 @@ const handlers = [
     messageHandler 
 ]
 
+function buildAuthRequest(socket: Socket): NextApiRequest {
+    const cookieHeader = socket.request.headers.cookie ?? "";
+    return {
+        headers: {
+            cookie: cookieHeader,
+        },
+        cookies: parseCookieHeader(cookieHeader),
+    } as unknown as NextApiRequest;
+}
+
 export function initSocket(io : Server){
     io.on('connection' , async (socket : Socket) => {
         socket.data.authenticated = false ;
 
         socket.on('authenticate' , async () => {
             try {
+                const req = buildAuthRequest(socket);
+                const secureCookie = process.env.NEXTAUTH_URL?.startsWith("https://") ?? false;
 
-                const req = socket.request as unknown as NextApiRequest
-                
                 const token = await getToken({
                     req ,
-                    secret : process.env.NEXTAUTH_SECRET!
+                    secret : process.env.NEXTAUTH_SECRET!,
+                    secureCookie,
                 })
 
-                if (!token || !token.id) {
+                if (!token || !token.userId) {
+                    console.log(
+                        "Socket auth failed: no token",
+                        socket.request.headers.cookie ? "cookie present" : "no cookie header"
+                    );
                     socket.emit('auth_error', { message: 'Not authenticated' })
                     socket.disconnect(true)
                     return
                 }
 
                 socket.data.authenticated = true ;
-                socket.data.userId = token.id ;
+                socket.data.userId = token.userId ;
                 socket.data.username = token.username ;
                 socket.join(socket.data.userId) 
 
+                try {
+                    await subscribeToChannel(`user:${socket.data.userId}`)
+                    await syncUserRoom(socket)
+                } catch (redisError: unknown) {
+                    const message = redisError instanceof Error ? redisError.message : String(redisError);
+                    console.error("Socket auth: Redis/room sync failed:", message);
+                }
 
-                await syncUserRoom(socket)
-                handlers.forEach(handler => handler(io , socket))
+                if (!socket.data.handlersRegistered) {
+                    handlers.forEach(handler => handler(io , socket))
+                    socket.data.handlersRegistered = true
+                }
 
                 socket.emit('authenticated' , {id : socket.data.userId})
 
-            } catch {
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                console.error("Socket auth error:", message);
                 socket.emit('auth_error' , { message : 'Invalid or expired token'})
                 socket.disconnect(true)
             }
         })
 
-        socket.onAny((event : any) => {
+        socket.onAny((event : string) => {
             if( event === 'authenticate' ) return 
 
             if(!socket.data.authenticated){

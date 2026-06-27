@@ -46,7 +46,7 @@ export default function messageHandler(io : Server , socket : Socket){
                 include : {author : {where : {id : socket.data.userId}}}
             })
 
-            if(!getRoom) {
+            if(!getRoom || getRoom.author.length == 0) {
                 socket.emit('error' , { message : "Room does not exists or not a member"})
                 return 
             }
@@ -66,7 +66,7 @@ export default function messageHandler(io : Server , socket : Socket){
             })))
 
         } catch (error : any) {
-            console.log(error.message)
+            console.error(error)
             socket.emit('error' , {message : "Failed to fetch messages"})
         }
     })

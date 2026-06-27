@@ -13,7 +13,7 @@ export default function SignInPage(){
     // If already signed in, redirect to home
     useEffect(() => {
         if (session) {
-            router.push("/");
+            router.push("/homepage");
         }
     }, [session, router]);
 
@@ -32,8 +32,7 @@ export default function SignInPage(){
             })
             
             if (result?.ok) {
-                // Force a hard refresh to clear all caches
-                window.location.href = "/";
+                window.location.href = "/homepage";
             } else {
                 setError("Invalid userName or password")
             }

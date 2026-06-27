@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import prisma from "./prisma";
+import { subscribeToChannel } from "@/chatHandler";
 
 export async function syncUserRoom(socket : Socket){
     const user = await prisma.user.findFirst({
@@ -9,7 +10,8 @@ export async function syncUserRoom(socket : Socket){
 
     if(!user) return null
 
-    user.rooms.forEach(room => {
+    for (const room of user.rooms) {
         socket.join(room.id)
-    })
+        await subscribeToChannel(`room:${room.id}`)
+    }
 }

@@ -34,7 +34,7 @@ export default function SignUpPage(){
                 return
             }
             
-            router.push("/")
+            router.push("/homepage")
         } 
         catch (error : any) {
             console.error("Signup error:", error);

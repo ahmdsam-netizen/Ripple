@@ -47,13 +47,8 @@ export const authOptions : NextAuthOptions = {
                 return null ;
             }
             if(user){
-                const newToken = {
-                    userId : user.id ,
-                    username : user.username ,
-                    iat : Math.floor(Date.now() / 1000),
-                    exp : Math.floor(Date.now() / 1000) + (24 * 60 * 60),
-                }
-                return newToken
+                token.userId = user.id ;
+                token.username = user.username ;
             }
             return token ;
         } ,

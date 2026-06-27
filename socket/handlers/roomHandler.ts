@@ -45,7 +45,7 @@ export default function (io : Server , socket : Socket){
                 }
             })
 
-            socket.emit('filter_room' , getRooms.map(room => ({
+            socket.emit('filter_rooms' , getRooms.map(room => ({
                 roomname : room.roomname , 
                 admin : room.created_by ,
                 created_at : room.created_at ,

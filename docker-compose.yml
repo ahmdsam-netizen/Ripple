@@ -1,9 +1,10 @@
+# to run this file -- docker compose -f docker-compose-multiple.yml up
+
 services:
-  app:
-    build: 
+  app: 
+    build:
       context: .
       dockerfile: Dockerfile
-    container_name: ripple-application
     env_file:
       - .env
     ports:
@@ -11,7 +12,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-  
+
   db: 
     image: postgres:alpine
     container_name: ripple-database
@@ -30,6 +31,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  pub-sub:
+    image: redis:latest
+    container_name: ripple-pub-sub
+    restart:  always
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres-data:

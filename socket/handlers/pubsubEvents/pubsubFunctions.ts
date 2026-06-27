@@ -1,8 +1,7 @@
 import prisma from "@/lib/prisma"
-import { publisher, subscriber } from "@/redisClient"
+import { publisher } from "@/redisClient"
+import { subscribeToChannel, unsubscribeFromChannel, isSubscribed } from "@/chatHandler"
 import { Socket } from "socket.io"
-
-const subscribedRoom = new Set() ;
 
 // Helper function for publishing events with error handling
 async function publishEvent(channel: string, payload: any) {
@@ -196,8 +195,7 @@ export async function createRoom(socket : Socket , data : {roomname : string , d
         socket.join(room.id)
         socket.emit('room_created' , {roomname : room.roomname})
 
-        await subscriber.subscribe(`room:${room.id}` , () => {})
-        subscribedRoom.add(`room:${room.id}`) 
+        await subscribeToChannel(`room:${room.id}`)
 
     } catch (error : any) {
         console.log(error.message)
@@ -241,10 +239,8 @@ export async function joinRoom(socket : Socket , data : {roomname : string}){
         }
         await publishEvent(`room:${existingRoom.id}` , payload)
 
-        if(!subscribedRoom.has(`room:${existingRoom.id}`)){
-            await subscriber.subscribe(`room:${existingRoom.id}` , () => {})
-            subscribedRoom.add(`room:${existingRoom.id}`)
-            console.log(`Server subscribed to Redis channel: room:${existingRoom.id}`);
+        if(!isSubscribed(`room:${existingRoom.id}`)){
+            await subscribeToChannel(`room:${existingRoom.id}`)
         }
     } catch (error : any) {
         console.log(error.message)
@@ -288,12 +284,13 @@ export async function leaveRoom(socket : Socket , data : {roomname : string}){
             username : socket.data.username
         }
 
+        const remainingSocket = await socket.in(existingRoom.id).fetchSockets()
+        
         await publishEvent(`room:${existingRoom.id}` , payload)
 
-        // Unsubscribe from Redis channel when no one is listening
-        // TODO: Optimize this to unsubscribe only when no users remain in room
-        await subscriber.unsubscribe(`room:${existingRoom.id}`)
-        subscribedRoom.delete(`room:${existingRoom.id}`)
+        if(remainingSocket.length == 0){
+            await unsubscribeFromChannel(`room:${existingRoom.id}`)
+        }
 
     } catch (error : any) {
         console.log(error.message)

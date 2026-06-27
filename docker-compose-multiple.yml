@@ -5,39 +5,55 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ripple-app1
     env_file:
       - .env
+    environment:
+      INSTANCE_ID: app1
+      NEXTAUTH_URL: http://localhost:3000
     ports:
       - 3000:3000
     depends_on:
       db:
+        condition: service_healthy
+      pub-sub:
         condition: service_healthy
 
   app2:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ripple-app2
     env_file:
       - .env
+    environment:
+      INSTANCE_ID: app2
+      NEXTAUTH_URL: http://localhost:3001
     ports:
       - 3001:3000
     depends_on:
       db:
+        condition: service_healthy
+      pub-sub:
         condition: service_healthy
 
   app3:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ripple-app3
     env_file:
       - .env
+    environment:
+      INSTANCE_ID: app3
+      NEXTAUTH_URL: http://localhost:3002
     ports:
       - 3002:3000
     depends_on:
       db:
         condition: service_healthy
       pub-sub:
-        condition: service_started
+        condition: service_healthy
 
   db: 
     image: postgres:alpine
