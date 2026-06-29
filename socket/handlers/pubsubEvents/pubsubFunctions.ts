@@ -4,6 +4,8 @@ import { subscribeToChannel, unsubscribeFromChannel, isSubscribed } from "@/chat
 import { Socket } from "socket.io"
 
 // Helper function for publishing events with error handling
+// payload is something --- that publish function just pass - where it is sent
+// and channel is the string --- publish function search for such subscriber if exist then pass it
 async function publishEvent(channel: string, payload: any) {
     try {
         const numSubscribers = await publisher.publish(channel, JSON.stringify(payload))

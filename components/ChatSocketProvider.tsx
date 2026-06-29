@@ -50,6 +50,7 @@ type ChatSocketContextValue = {
   clearError: () => void;
 };
 
+// creation of context with default value as null
 const ChatSocketContext = createContext<ChatSocketContextValue | null>(null);
 
 function parseError(error: SocketErrorPayload) {
@@ -72,6 +73,11 @@ function payloadToMessage(payload: LiveChatPayload): ChatMessage {
 function chatMessageKey(message: ChatMessage) {
   return `${message.sent_at}-${message.sent_by}-${message.content}`;
 }
+
+// here this wrapper function is doing many jobs --- such as : 
+
+// authentication of user then defining the events (frontend defined events)
+// defining the function to use backend defined events and using useContext for avoiding prop drilling
 
 export default function ChatSocketProvider({
   children,
@@ -101,6 +107,11 @@ export default function ChatSocketProvider({
 
   activeChatRef.current = activeChat;
   usernameRef.current = username;
+
+  // the functionality of useCallBack is -- (it is similar to useState) -- it ensure to memoize function 
+  // until the value inside [] does not change -- we value changes then again this function is called 
+  // until then when ever this function is called or variable storing this function is called 
+  // this will return same values as memoized 
 
   const addSystemMessage = useCallback((text: string) => {
     setSystemMessages((prev) => [
@@ -231,6 +242,8 @@ export default function ChatSocketProvider({
     }
 
     let cancelled = false;
+
+    // here connectWithAuth() will authenticate the user --- then after that events are defined
 
     connectWithAuth()
       .then((socket) => {
@@ -412,6 +425,7 @@ export default function ChatSocketProvider({
     clearError,
   };
 
+  // here we are providing value to be shared
   return (
     <ChatSocketContext.Provider value={value}>
       {children}
@@ -419,6 +433,7 @@ export default function ChatSocketProvider({
   );
 }
 
+// this function is grabbing the value shared through context --- without prop drilling 
 export function useChatSocket() {
   const context = useContext(ChatSocketContext);
   if (!context) {

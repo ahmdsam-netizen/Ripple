@@ -5,7 +5,7 @@ import { createServer } from "http";
 import { parse } from "url";
 import { initSocket } from "./socket";
 import { connectRedis } from "@/redisClient";
-import { setUpRedisListener, subscribeAllRoomChannels } from "@/chatHandler";
+import { setUpServerInstance, subscribeAllRoomChannels } from "@/chatHandler";
 
 const port = Number(process.env.PORT ?? 3000);
 const dev = process.env.NODE_ENV !== 'production';
@@ -33,11 +33,15 @@ const app = next({ dev, port })
 const handle = app.getRequestHandler() ;
 
 app.prepare().then(async () => {
+
+    // Here this handles all regular http traffic -- by passing every request to nextjs handler() 
     const httpServer = createServer((req , res) => {
         const parseUrl = parse(req.url! , true) ;
         handle(req , res , parseUrl)
     })
 
+    // this attach or upgrade http server to web socket server that will handle all socket traffic
+    // this is server instance
     const io = new Server(httpServer , {
         cors : {
             origin: (origin, callback) => {
@@ -53,9 +57,17 @@ app.prepare().then(async () => {
         }
     })
 
+    // Here redis connection is been established
     await connectRedis()
-    setUpRedisListener(io)
+    
+    // What really it does ?? -- as we cannot directly export io -- that's why we are using it 
+    setUpServerInstance(io)
+
+    // Subscribing to all the channels that i already have subscribed to -- with the help of db
+    // this is helpful when receiving message from the other members 
     await subscribeAllRoomChannels()
+
+    // this is after logic after connection of application
     initSocket(io) 
 
     httpServer.listen(port , () => {
