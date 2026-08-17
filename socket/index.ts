@@ -1,28 +1,17 @@
 import roomHandler from "./handlers/roomHandler";
 import userHandler from "./handlers/userHandler";
 import messageHandler from "./handlers/messageHandler";
-import { NextApiRequest } from "next";
-import { getToken } from "next-auth/jwt";
 import { Server, Socket } from "socket.io"
 import { syncUserRoom } from "@/lib/reconnect";
 import { subscribeToChannel } from "@/chatHandler";
 import { parseCookieHeader } from "@/lib/parseCookies";
+import { AUTH_COOKIE, verifyToken } from "@/server/auth";
 
 const handlers = [
     roomHandler ,
     userHandler ,
     messageHandler 
 ]
-
-function buildAuthRequest(socket: Socket): NextApiRequest {
-    const cookieHeader = socket.request.headers.cookie ?? "";
-    return {
-        headers: {
-            cookie: cookieHeader,
-        },
-        cookies: parseCookieHeader(cookieHeader),
-    } as unknown as NextApiRequest;
-}
 
 export function initSocket(io : Server){
     io.on('connection' , async (socket : Socket) => {
@@ -32,18 +21,11 @@ export function initSocket(io : Server){
         // event to handle authentication of user when user hits this event 
         socket.on('authenticate' , async () => {
             try {
-                // this create a object of http request from the socket as token expect http req obj
-                const req = buildAuthRequest(socket);
-                const secureCookie = process.env.NEXTAUTH_URL?.startsWith("https://") ?? false;
+                const cookies = parseCookieHeader(socket.request.headers.cookie ?? "");
+                const rawToken = cookies[AUTH_COOKIE];
+                const token = rawToken ? verifyToken(rawToken) : null;
 
-                // decoded jwt session token -- in the from of object
-                const token = await getToken({
-                    req ,
-                    secret : process.env.NEXTAUTH_SECRET!,
-                    secureCookie,
-                })
-
-                if (!token || !token.userId) {
+                if (!token?.id) {
                     console.log(
                         "Socket auth failed: no token",
                         socket.request.headers.cookie ? "cookie present" : "no cookie header"
@@ -54,7 +36,7 @@ export function initSocket(io : Server){
                 }
 
                 socket.data.authenticated = true ;
-                socket.data.userId = token.userId ;
+                socket.data.userId = token.id ;
                 socket.data.username = token.username ;
                 socket.join(socket.data.userId) 
 

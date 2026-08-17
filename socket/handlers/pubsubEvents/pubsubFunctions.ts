@@ -255,7 +255,8 @@ export async function leaveRoom(socket : Socket , data : {roomname : string}){
         const existingRoom = await prisma.room.findFirst({
             where : {roomname : data.roomname} ,
             include : {
-                author : {where : {id : socket.data.userId}}
+                author : {where : {id : socket.data.userId}},
+                _count : {select : {author : true}}
             }
         })            
 
@@ -290,8 +291,31 @@ export async function leaveRoom(socket : Socket , data : {roomname : string}){
         
         await publishEvent(`room:${existingRoom.id}` , payload)
 
+        // Check if room member count is now zero
         if(remainingSocket.length == 0){
             await unsubscribeFromChannel(`room:${existingRoom.id}`)
+            
+            // Delete all messages in the room first (foreign key constraint)
+            await prisma.roomMessage.deleteMany({
+                where : {room_id : existingRoom.id}
+            })
+            
+            // Delete the room
+            await prisma.room.delete({
+                where : {id : existingRoom.id}
+            })
+            
+            // Notify all users that room is deleted so they can update search results
+            const deletePayload = {
+                event_type: 'room_deleted',
+                roomname : existingRoom.roomname,
+                roomId : existingRoom.id
+            }
+            
+            // Publish to global channel so ALL connected users get notified
+            await publishEvent(`global:rooms` , deletePayload)
+            
+            console.log(`✅ Room '${existingRoom.roomname}' deleted (no members remaining)`)
         }
 
     } catch (error : any) {

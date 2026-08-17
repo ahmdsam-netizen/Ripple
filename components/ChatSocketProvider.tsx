@@ -364,6 +364,18 @@ export default function ChatSocketProvider({
           socket.emit("list_room", { filter: "" });
         });
 
+        socket.on("room_deleted", (payload: { roomname: string; roomId: string }) => {
+          setStatusMessage(`Room "${payload.roomname}" was deleted (no members remaining)`);
+          
+          // If currently viewing the deleted room, clear active chat
+          if (activeChatRef.current?.type === "room" && activeChatRef.current.roomname === payload.roomname) {
+            clearActiveChat();
+          }
+          
+          // Refresh room list to remove the deleted room
+          socket.emit("list_room", { filter: roomFilter });
+        });
+
         socket.on("error", (payload: SocketErrorPayload) => {
           setErrorMessage(parseError(payload));
         });

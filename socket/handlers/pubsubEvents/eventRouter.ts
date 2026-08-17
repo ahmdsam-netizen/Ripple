@@ -12,5 +12,9 @@ export const eventHandlers = {
     },
     'leave' : (io : Server , id : string , parsed : any) => {
         return io.to(id).emit('leave' , parsed) ;
+    },
+    'room_deleted' : (io : Server , id : string , parsed : any) => {
+        // Broadcast to ALL connected users globally to update their search results
+        return io.emit('room_deleted' , parsed) ;
     }
 }

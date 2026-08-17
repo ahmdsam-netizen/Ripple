@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -18,7 +18,7 @@ model User {
 
   sMessage DirectMessage[] @relation("dm_sent")
   rMessage DirectMessage[] @relation("dm_received")
-} 
+}
 
 model Room {
   id    String     @id @default(cuid()) 

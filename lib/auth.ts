@@ -1,73 +1,76 @@
 import { NextAuthOptions } from "next-auth";
 import prisma from "./prisma";
-import CredentialsProvider from "next-auth/providers/credentials"
+import { compare } from "bcrypt";
+import CredentialsProvider from "next-auth/providers/credentials";
 
-export const authOptions : NextAuthOptions = {
-    secret: process.env.NEXTAUTH_SECRET ,
-    session: {
-        strategy: "jwt",
-    },
-    providers : [
-        CredentialsProvider({
-            credentials : {
-                username : { label : "username" , type : "text" , placeholder : "samTense3"} ,
-                password : { label : "Password" , type : "password" , placeholder : "******"} ,
-            } ,
-            async authorize(credentials){
-                if(!credentials?.username || !credentials?.password){
-                    return null ;
-                }
-                try {
-                    const user = await prisma.user.findFirst({
-                        where : {
-                            username : credentials.username ,
-                            password : credentials.password
-                        }
-                    })
-
-                    if(!user) return null ;
-
-                    return {username : user.username , id : user.id}
-                } catch (error : any) {
-                    console.log("Error in authorization : " , error.message)
-                    return null ;
-                }
-            }
-        })
-    ] ,
-    pages : {
-        signIn : "/signin" ,
-        newUser : "/signup" ,
-    },
-
-    callbacks : {
-        async jwt({token , user , trigger} : any){
-            if(trigger === "signOut") {
-                console.log("cleared token , user signout")
-                return null ;
-            }
-            if(user){
-                token.userId = user.id ;
-                token.username = user.username ;
-            }
-            return token ;
-        } ,
-        async session({session , token} : any){
-            if(!token || !token.userId) return null ;
-
-            session.user = {
-                userId : token.userId,
-                username : token.username,
-                email : token.email || null,
-            }
-
-            return session ;
+export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
+  providers: [
+    CredentialsProvider({
+      credentials: {
+        username: { label: "username", type: "text", placeholder: "samTense3" },
+        password: { label: "Password", type: "password", placeholder: "******" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
         }
-    },
+        try {
+          const user = await prisma.user.findFirst({
+            where: {
+              username: credentials.username,
+            },
+          });
 
-    events : {
-        async signOut(){
+          if (!user) return null;
 
+          // Compare hashed passwords
+          const isPasswordValid = await compare(credentials.password, user.password);
+
+          if (!isPasswordValid) return null;
+
+          return { username: user.username, id: user.id };
+        } catch (error: any) {
+          console.log("Error in authorization : ", error.message);
+          return null;
         }
-    } ,
-}
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/signin",
+    newUser: "/signup",
+  },
+
+  callbacks: {
+    async jwt({ token, user, trigger }: any) {
+      if (trigger === "signOut") {
+        console.log("cleared token , user signout");
+        return null;
+      }
+      if (user) {
+        token.userId = user.id;
+        token.username = user.username;
+      }
+      return token;
+    },
+    async session({ session, token }: any) {
+      if (!token || !token.userId) return null;
+
+      session.user = {
+        userId: token.userId,
+        username: token.username,
+        email: token.email || null,
+      };
+
+      return session;
+    },
+  },
+
+  events: {
+    async signOut() {},
+  },
+};

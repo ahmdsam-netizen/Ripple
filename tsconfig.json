@@ -13,22 +13,21 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": ["./*"]
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "server.ts",
+    "chatHandler.ts",
+    "redisClient.ts",
+    "server/**/*.ts",
+    "socket/**/*.ts",
+    "lib/prisma.ts",
+    "lib/parseCookies.ts",
+    "generated/**/*.ts",
+    "client/src/**/*.ts",
+    "client/src/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }

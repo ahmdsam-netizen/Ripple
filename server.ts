@@ -1,17 +1,23 @@
 import "dotenv/config";
 import { Server } from "socket.io"
-import next from "next"
 import { createServer } from "http";
-import { parse } from "url";
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import path from "path";
 import { initSocket } from "./socket";
 import { connectRedis } from "@/redisClient";
 import { setUpServerInstance, subscribeAllRoomChannels } from "@/chatHandler";
+import authRoutes from "@/server/routes/auth";
+import prisma from "@/lib/prisma";
 
 const port = Number(process.env.PORT ?? 3000);
-const dev = process.env.NODE_ENV !== 'production';
 const instanceId = process.env.INSTANCE_ID ?? `port-${port}`;
 
+// Default origins for local development - override with ALLOWED_ORIGINS in .env
 const defaultOrigins = [
+    "http://localhost:5173",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
@@ -25,20 +31,31 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? defaultOrigins.join(","))
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-if (process.env.NEXTAUTH_URL && !allowedOrigins.includes(process.env.NEXTAUTH_URL)) {
-    allowedOrigins.push(process.env.NEXTAUTH_URL);
+const app = express();
+app.set("trust proxy", 1);
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.use("/api/auth", authRoutes);
+app.get("/api/health", async (_req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({ status: "healthy", timestamp: new Date().toISOString(), environment: process.env.NODE_ENV });
+    } catch (error) {
+        res.status(503).json({ status: "unhealthy", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+});
+
+if (process.env.NODE_ENV === "production") {
+    const clientDist = path.resolve(process.cwd(), "client/dist");
+    app.use(express.static(clientDist));
+    app.get("/{*splat}", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
 }
 
-const app = next({ dev, port })
-const handle = app.getRequestHandler() ;
+async function start() {
 
-app.prepare().then(async () => {
-
-    // Here this handles all regular http traffic -- by passing every request to nextjs handler() 
-    const httpServer = createServer((req , res) => {
-        const parseUrl = parse(req.url! , true) ;
-        handle(req , res , parseUrl)
-    })
+    const httpServer = createServer(app)
 
     // this attach or upgrade http server to web socket server that will handle all socket traffic
     // this is server instance
@@ -67,11 +84,20 @@ app.prepare().then(async () => {
     // this is helpful when receiving message from the other members 
     await subscribeAllRoomChannels()
 
+    // Subscribe to global rooms channel for room deletion notifications
+    const { subscribeToChannel } = await import("@/chatHandler")
+    await subscribeToChannel(`global:rooms`)
+
     // this is after logic after connection of application
     initSocket(io) 
 
     httpServer.listen(port , () => {
-        console.log(`[${instanceId}] Ready at ${process.env.NEXTAUTH_URL ?? `http://localhost:${port}`}`)
+        console.log(`[${instanceId}] API ready at http://localhost:${port}`)
         console.log(`[${instanceId}] Socket CORS origins: ${allowedOrigins.join(", ")}`)
     })
-})
+}
+
+start().catch((error) => {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+});

@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnp
+
+# Testing
+coverage
+.nyc_output
+
+# Next.js
+.next
+out
+build
+
+# Env files (don't include secrets in image)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Other
+.git
+.github
+README.md
+AGENTS.md
+CLAUDE.md
