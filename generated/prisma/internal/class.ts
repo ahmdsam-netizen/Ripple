@@ -17,8 +17,8 @@ import type * as Prisma from "./prismaNamespace"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.8.0",
-  "engineVersion": "3c6e192761c0362d496ed980de936e2f3cebcd3a",
+  "clientVersion": "7.9.1",
+  "engineVersion": "e922089b7d7502aff4249d5da3420f6fa55fc6ad",
   "activeProvider": "postgresql",
   "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel User {\n  id         String        @id @default(cuid())\n  email      String        @unique\n  password   String\n  username   String        @unique\n  created_at DateTime      @default(now())\n  rooms      Room[]\n  messages   RoomMessage[]\n\n  sMessage DirectMessage[] @relation(\"dm_sent\")\n  rMessage DirectMessage[] @relation(\"dm_received\")\n}\n\nmodel Room {\n  id          String        @id @default(cuid())\n  roomname    String        @unique\n  description String?\n  created_by  String\n  created_at  DateTime      @default(now())\n  messages    RoomMessage[]\n  author      User[]\n}\n\nmodel RoomMessage {\n  id      String   @id @default(cuid())\n  content String\n  sent_at DateTime @default(now())\n  room_id String\n  room    Room     @relation(fields: [room_id], references: [id])\n  user_id String\n  user    User     @relation(fields: [user_id], references: [id])\n}\n\nmodel DirectMessage {\n  id          String   @id @default(cuid())\n  content     String\n  sent_at     DateTime @default(now())\n  sender_id   String\n  sender      User     @relation(\"dm_sent\", fields: [sender_id], references: [id])\n  receiver_id String\n  receiver    User     @relation(\"dm_received\", fields: [receiver_id], references: [id])\n}\n",
   "runtimeDataModel": {
@@ -82,7 +82,7 @@ export interface PrismaClientConstructor {
     LogOpts extends LogOptions<Options> = LogOptions<Options>,
     OmitOpts extends Prisma.PrismaClientOptions['omit'] = Options extends { omit: infer U } ? U : Prisma.PrismaClientOptions['omit'],
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-  >(options: Prisma.Subset<Options, Prisma.PrismaClientOptions> ): PrismaClient<LogOpts, OmitOpts, ExtArgs>
+  >(options: Prisma.PrismaClientConstructorArgs<Options>): PrismaClient<LogOpts, OmitOpts, ExtArgs>
 }
 
 /**
@@ -103,7 +103,7 @@ export interface PrismaClientConstructor {
 
 export interface PrismaClient<
   in LogOpts extends Prisma.LogLevel = never,
-  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = undefined,
+  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = Prisma.PrismaClientOptions['omit'],
   in out ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > {
   [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['other'] }

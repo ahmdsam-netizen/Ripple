@@ -11,6 +11,10 @@ services:
     environment:
       INSTANCE_ID: app1
       PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_URL: redis://pub-sub:6379
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
     ports:
       - 3000:3000
     depends_on:
@@ -28,7 +32,11 @@ services:
       - .env
     environment:
       INSTANCE_ID: app2
-      PORT: 3001
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_URL: redis://pub-sub:6379
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
     ports:
       - 3001:3000
     depends_on:
@@ -46,7 +54,11 @@ services:
       - .env
     environment:
       INSTANCE_ID: app3
-      PORT: 3002
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_URL: redis://pub-sub:6379
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
     ports:
       - 3002:3000
     depends_on:
@@ -64,7 +76,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - ${DB_PORT}:5432
+      - ${DB_PORT:-5432}:5432
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
@@ -79,7 +91,7 @@ services:
     container_name: ripple-pub-sub
     restart:  always
     ports:
-      - ${REDIS_PORT}:6379
+      - ${REDIS_PORT:-6379}:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
