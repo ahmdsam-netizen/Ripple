@@ -3,7 +3,7 @@
 services:
   app1: 
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: ripple-app1
     env_file:
@@ -25,7 +25,7 @@ services:
 
   app2:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: ripple-app2
     env_file:
@@ -47,7 +47,7 @@ services:
 
   app3:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: ripple-app3
     env_file:

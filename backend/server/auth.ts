@@ -36,10 +36,14 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+const cookieSameSite = (process.env.COOKIE_SAME_SITE as "none" | "lax" | "strict" | undefined) ?? (isProduction ? "none" : "lax");
+
 export const authCookieOptions = {
   httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
+  sameSite: cookieSameSite,
+  secure: isProduction || cookieSameSite === "none",
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/",
 };
+

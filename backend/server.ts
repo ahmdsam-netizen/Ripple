@@ -47,11 +47,10 @@ app.get("/api/health", async (_req, res) => {
     }
 });
 
-if (process.env.NODE_ENV === "production") {
-    const clientDist = path.resolve(process.cwd(), "client/dist");
-    app.use(express.static(clientDist));
-    app.get("/{*splat}", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
-}
+app.get("/", (_req, res) => {
+    res.json({ message: "Ripple API and WebSocket server running" });
+});
+
 
 async function start() {
 

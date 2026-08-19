@@ -3,7 +3,7 @@
 services:
   app: 
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -12,7 +12,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       REDIS_URL: redis://pub-sub:6379
-      ALLOWED_ORIGINS: http://localhost:${APP_PORT:-3000}
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:${APP_PORT:-3000}
     ports:
       - ${APP_PORT:-3000}:3000
     restart: unless-stopped
@@ -21,6 +21,19 @@ services:
         condition: service_healthy
       pub-sub:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_BACKEND_HOST: app
+    ports:
+      - 5173:5173
+    depends_on:
+      - app
+    restart: unless-stopped
+
 
   db: 
     image: postgres:alpine

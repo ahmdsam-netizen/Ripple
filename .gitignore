@@ -19,9 +19,14 @@
 # testing
 /coverage
 
-# Vite
+# Vite & Builds
+dist/
+/frontend/dist/
 /client/dist/
 /.next/
+/backend/generated/
+generated/
+
 
 # production
 /build

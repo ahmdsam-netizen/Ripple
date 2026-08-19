@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2022",
+    "lib": ["esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -11,7 +11,6 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
     "incremental": true,
     "paths": {
       "@/*": ["./*"]
@@ -23,11 +22,8 @@
     "redisClient.ts",
     "server/**/*.ts",
     "socket/**/*.ts",
-    "lib/prisma.ts",
-    "lib/parseCookies.ts",
-    "generated/**/*.ts",
-    "client/src/**/*.ts",
-    "client/src/**/*.tsx"
+    "lib/**/*.ts",
+    "generated/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
